@@ -5,12 +5,13 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using Unity_Game_Server.Models;
 
 namespace Unity_Game_Server
 {
     internal class GameServer
     {
-        public delegate void PacketReceivedHandler(string packet);
+        public delegate void PacketReceivedHandler(byte[] packetData);
 
         public event PacketReceivedHandler OnPacketReceived;
 
@@ -18,7 +19,7 @@ namespace Unity_Game_Server
         public UInt16 port { get; private set; }
 
         private HttpListener httpListener = new HttpListener();
-        public List<WebSocket> connectedClients { get; private set; }
+        public List<Client> connectedClients { get; private set; }
 
         public async void InitServer()
         {
@@ -44,8 +45,9 @@ namespace Unity_Game_Server
         {
             HttpListenerWebSocketContext socketContext = await context.AcceptWebSocketAsync(null);
             WebSocket webSocket = socketContext.WebSocket;
+            Client client = new Client(webSocket, 0);
 
-            connectedClients.Add(webSocket);
+            connectedClients.Add(client);
             Console.WriteLine("New Client Connected");
 
             try
@@ -56,7 +58,7 @@ namespace Unity_Game_Server
                 Console.WriteLine($"Error: {e.Message}");
             } finally
             {
-                connectedClients.Remove(webSocket);
+                connectedClients.Remove(client);
                 Console.WriteLine("A Client Disconnected");
                 await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
                 webSocket.Dispose();
@@ -75,8 +77,6 @@ namespace Unity_Game_Server
                 {
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                     fullPacket.AddRange(buffer.Take(result.Count));
-
-                    Console.WriteLine($"Looped. Buffer received: {Encoding.UTF8.GetString(buffer, 0, buffer.Length)}");
                 } while (!result.EndOfMessage);
 
                 if (result.MessageType == WebSocketMessageType.Text)
