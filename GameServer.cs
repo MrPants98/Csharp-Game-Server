@@ -25,13 +25,13 @@ namespace Unity_Game_Server
             string uri = "http://" + url + ":" + port + "/";
             httpListener.Prefixes.Add(uri);
             httpListener.Start();
-            Console.WriteLine($"Server started. Join with {uri}");
+            Console.WriteLine($"Server started. Join with {url}:{port}");
 
             while(true)
             {
                 HttpListenerContext context = await httpListener.GetContextAsync();
                 if (context.Request.IsWebSocketRequest)
-                    await HandleConnection(context);
+                    _ = Task.Run(() => HandleClientJoining(context));
                 else
                 {
                     context.Response.StatusCode = 400;
@@ -40,7 +40,7 @@ namespace Unity_Game_Server
             }
         }
 
-        private async Task HandleConnection(HttpListenerContext context)
+        private async Task HandleClientJoining(HttpListenerContext context)
         {
             HttpListenerWebSocketContext socketContext = await context.AcceptWebSocketAsync(null);
             WebSocket webSocket = socketContext.WebSocket;
@@ -50,7 +50,7 @@ namespace Unity_Game_Server
 
             try
             {
-                await ReceiveMessages(webSocket);
+                await ReceivePackets(webSocket);
             } catch (Exception e)
             {
                 Console.WriteLine($"Error: {e.Message}");
@@ -63,23 +63,33 @@ namespace Unity_Game_Server
             }
         }
 
-        private async Task ReceiveMessages(WebSocket webSocket)
+        private async Task ReceivePackets(WebSocket webSocket)
         {
-            byte[] buffer = new byte[1024 * 4];
-            WebSocketReceiveResult result;
+            byte[] buffer = new byte[4096];
+            var fullPacket = new List<byte>();
 
             while (webSocket.State == WebSocketState.Open)
             {
-                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                WebSocketReceiveResult result;
+                do
+                {
+                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    fullPacket.AddRange(buffer.Take(result.Count));
+
+                    Console.WriteLine($"Looped. Buffer received: {Encoding.UTF8.GetString(buffer, 0, buffer.Length)}");
+                } while (!result.EndOfMessage);
+
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    string message = Encoding.UTF8.GetString(fullPacket.ToArray(), 0, fullPacket.Count);
                     OnPacketReceived?.Invoke(message);
                 }
+
+                fullPacket.Clear();
             }
         }
 
-        public GameServer(string? _url, UInt16 _port)
+        public GameServer(string _url, UInt16 _port)
         {
             url = _url;
             port = _port;

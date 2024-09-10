@@ -9,7 +9,6 @@ namespace Unity_Game_Server
 
         static void Main(string[] args)
         {
-            
             server.InitServer();
 
             server.OnPacketReceived += PacketHandling;
