@@ -1,7 +1,4 @@
-﻿using System.Net.WebSockets;
-using System.Text;
-
-namespace Unity_Game_Server
+﻿namespace Unity_Game_Server
 {
     internal class Program
     {
@@ -16,9 +13,6 @@ namespace Unity_Game_Server
 
             websocketServer.InitServer();
             packetHandler.InitPacketHandler();
-
-
-            Console.ReadLine();
         }
     }
 }

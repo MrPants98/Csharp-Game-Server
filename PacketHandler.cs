@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Unity_Game_Server.Models;
 using Unity_Game_Server.Models.PacketData.ServerBound;
 
@@ -23,8 +19,12 @@ namespace Unity_Game_Server
             switch (packetID)
             {
                 case 0:
-                    ClientConnect connectPacket = JsonSerializer.Deserialize<ClientConnect>(Encoding.UTF8.GetString(packetData, 1, packetData.Length - 1));
-                    connectPacket.AddConnectedPlayer(packetSender);
+                    
+                    _ = Task.Run(() =>
+                    {
+                        ClientConnect connectPacket = JsonSerializer.Deserialize<ClientConnect>(Encoding.UTF8.GetString(packetData, 1, packetData.Length - 1));
+                        connectPacket.AddConnectedPlayer(packetSender);
+                    });
                     break;
             }
         }
