@@ -5,12 +5,16 @@ namespace Unity_Game_Server
 {
     internal class Program
     {
-        private static GameServer server = new GameServer("localhost", 8080);
-        private static PacketHandler packetHandler = new PacketHandler(server);
+        public static WebsocketServer? websocketServer { get; private set; }
+        public static GameServer? gameServer { get; private set; }
+        private static PacketHandler packetHandler = new PacketHandler();
 
         static void Main(string[] args)
         {
-            server.InitServer();
+            websocketServer = new WebsocketServer("localhost", 8080);
+            gameServer = new GameServer();
+
+            websocketServer.InitServer();
             packetHandler.InitPacketHandler();
 
 
