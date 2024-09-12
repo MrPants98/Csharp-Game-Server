@@ -4,7 +4,7 @@
     {
         public static WebsocketServer? websocketServer { get; private set; }
         public static GameServer? gameServer { get; private set; }
-        private static PacketHandler packetHandler = new PacketHandler();
+        public static PacketHandler packetHandler = new PacketHandler();
 
         static void Main(string[] args)
         {
@@ -13,6 +13,13 @@
 
             websocketServer.InitServer();
             packetHandler.InitPacketHandler();
+            
+            do
+            {
+                string? line = Console.ReadLine();
+                if (line == "stop")
+                    break;
+            } while (true);
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Unity_Game_Server.Models.PacketData.ClientBound
 {
     public class ClientJoined
     {
-
+        public string username { get; set; }
+        public byte color { get; set; }
     }
 }

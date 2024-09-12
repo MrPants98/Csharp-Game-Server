@@ -8,28 +8,31 @@ namespace Unity_Game_Server
 {
     internal class PacketHandler
     {
-        public void InitPacketHandler()
+        public async void InitPacketHandler()
         {
             Program.websocketServer.OnPacketReceived += ExtractPacketData;
+            Console.WriteLine("Packet Handler Intialized");
         }
 
         private async void ExtractPacketData(byte[] packetData, WebSocket packetSender)
         {
             byte packetID = packetData[0];
-            switch (packetID)
+            byte[] packetDataJSON = new byte[packetData.Length - 1];
+            Array.Copy(packetData, 1, packetDataJSON, 0, packetDataJSON.Length);
+
+            using (Stream stream = new MemoryStream(packetDataJSON))
             {
-                case 0:
-                    
-                    _ = Task.Run(() =>
-                    {
-                        ClientConnect connectPacket = JsonSerializer.Deserialize<ClientConnect>(Encoding.UTF8.GetString(packetData, 1, packetData.Length - 1));
-                        connectPacket.AddConnectedPlayer(packetSender);
-                    });
-                    break;
+                switch (packetID)
+                {
+                    case 0:
+                        ClientConnect connectPacket = await JsonSerializer.DeserializeAsync<ClientConnect>(stream);
+                        await connectPacket.AddConnectedPlayer(packetSender);
+                        break;
+                }
             }
         }
 
-        private async Task BroadcastPacket(byte[] packetData)
+        public async Task BroadcastPacket(byte[] packetData)
         {
             List<Task> broadcastTasks = new List<Task>();
 
